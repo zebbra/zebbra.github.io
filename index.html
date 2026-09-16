@@ -117,7 +117,7 @@
     pointer-events: none;
   }
   .row { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: flex-end; }
-  .row svg { flex: 0 0 auto; height: 100%; width: auto; aspect-ratio: 40 / 62; display: block; }
+  .row svg { flex: 1 1 0; min-width: 0; height: 100%; display: block; overflow: visible; }
   .row.far { height: 74%; color: var(--red-far); left: -4%; right: -4%; }
   .row.near { height: 100%; color: var(--red); left: -6%; right: -6%; }
 
@@ -296,15 +296,26 @@
     }
     // the delay walks along the row, so the gust travels instead of pulsing
     const delay = (i * 0.17).toFixed(2), dur = (3.4 + (i % 5) * 0.28).toFixed(2);
-    return `<svg viewBox="0 0 40 62" preserveAspectRatio="xMidYMax meet" style="--delay:${delay}s;--dur:${dur}s">`
+    return `<svg viewBox="0 0 40 62" preserveAspectRatio="xMidYMax slice" style="--delay:${delay}s;--dur:${dur}s">`
          + `<g class="blades" stroke="currentColor" stroke-width="3.4" stroke-linecap="round">${lines}</g></svg>`;
   }
 
-  const sow = (el, count, seed) => {
-    el.innerHTML = Array.from({ length: count }, (_, i) => tuft(seed + i)).join('');
-  };
-  sow(document.getElementById('rowFar'), 34, 120);
-  sow(document.getElementById('rowNear'), 30, 40);
+  // A tuft is naturally 0.645x as wide as it is tall. Giving each one a bit
+  // less room than that makes neighbours overlap, so the meadow reads as one
+  // field rather than a row of separate bushes.
+  function sow(el, seed) {
+    const w = el.clientWidth || innerWidth;
+    const natural = 0.645 * (el.clientHeight || 260);
+    const n = Math.max(5, Math.round(w / (natural * 0.72)));
+    el.innerHTML = Array.from({ length: n }, (_, i) => tuft(seed + i)).join('');
+  }
+  const far = document.getElementById('rowFar');
+  const near = document.getElementById('rowNear');
+  const plant = () => { sow(far, 120); sow(near, 40); };
+  plant();
+
+  let replant;
+  addEventListener('resize', () => { clearTimeout(replant); replant = setTimeout(plant, 180); });
 
   /* ---------- move along ---------- */
 
